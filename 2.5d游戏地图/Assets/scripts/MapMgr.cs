@@ -1,0 +1,154 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class MapMgr : MonoBehaviour
+{
+    static MapMgr _get;
+    public static MapMgr Get
+    {
+        get
+        {
+            if (_get == null)
+            {
+                _get = GameObject.Find("GameObject").GetComponent<MapMgr>();
+            }
+            return _get;
+        }
+    }
+    public MapItrm[,] mapItems;
+    GameObject obj;
+    private void Start()
+    {
+        obj = Resources.Load<GameObject>("land_water");
+    }
+    float high = 1.086f;
+    float side = 2.05f;
+    int x_max;
+    int y_max;
+    public void BeginCreate(int _x_max, int _y_max)
+    {
+        x_max = _x_max;
+        y_max = _y_max;
+
+        mapItems = new MapItrm[x_max + 1, y_max + 1];
+        for (int i = 0; i < x_max; i++)
+        {
+            for (int j = 0; j < y_max; j++)
+            {
+                float x = (j - i) * side / 2;
+                float y = (j + i) * high / 2;
+                GameObject obj1 = Instantiate(obj);
+                obj1.transform.position = new Vector3(x,  y, 0);
+                mapItems[i, j] = obj1.GetComponent<MapItrm>();
+                mapItems[i, j].x = i;
+                mapItems[i, j].y = j;
+
+            }
+        }
+    }
+    private void Update()
+    {
+
+        if (Input.GetMouseButtonDown(0))
+            
+        {
+            MapItrm tile = getGameXY(Input.mousePosition);
+
+            tile.GetComponent<Renderer>().material.color = Color.red;
+           /* print("01");
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            if (Physics.Raycast(ray,out hit))
+            {
+                print("02");
+            }*/
+        }
+    }
+    public MapItrm getGameXY(Vector2 pos)
+    {
+        Vector3 p = Camera.main.ScreenToWorldPoint(new Vector3(pos.x, pos.y, 3));
+        // Debug.Log(p);
+        //  p = map.transform.InverseTransformPoint(p);
+        //  Debug.Log(p);
+        //p.x = p.x - Screen.width / 2;
+        p.y = p.y + x_max * 0.3f;
+        int x = (int)Mathf.Round(0.5f * (p.y / (high / 2) - p.x / (side / 2)));
+        int y = (int)Mathf.Round(0.5f * (p.y / (high / 2) + p.x / (side / 2)));
+
+        Debug.Log(x + "  " + y);
+
+        //根据矩形算出来的图快
+        MapItrm tile = mapItems[x, y];
+        Vector3 tilePos = tile.transform.localPosition;
+        ///八个点
+        Vector3 leftTop = tilePos + new Vector3(-side, -high);
+        Vector3 topMiddle = tilePos + new Vector3(0, -high / 2);
+        Vector3 rightTop = tilePos + new Vector3(side, -high);
+        Vector3 rightMiddle = tilePos + new Vector3(side, 0);
+        Vector3 rightBottom = tilePos + new Vector3(side, high);
+        Vector3 bottomMiddle = tilePos + new Vector3(0, high / 2);
+        Vector3 leftBottom = tilePos + new Vector3(-side, high);
+        Vector3 leftMiddle = tilePos + new Vector3(-side, 0);
+        //判断是否在左上三角形
+        bool isLeftTop = PointinTriangle(leftTop, topMiddle, leftMiddle, p);
+        if (isLeftTop)
+        {
+            Debug.Log("isLeftTop********************** " + x + "  " + (y - 1));
+            return mapItems[x, y - 1];
+        }
+        bool isRightTop = PointinTriangle(topMiddle, rightTop, rightMiddle, p);
+        if (isRightTop)
+        {
+            Debug.Log("isRightTop******************************** " + (x - 1) + "  " + y);
+            return mapItems[x - 1, y];
+        }
+        bool isRightBottom = PointinTriangle(rightMiddle, rightBottom, bottomMiddle, p);
+        if (isRightBottom)
+        {
+            Debug.Log("isRightBottom******************************" + x + "  " + y + 1);
+            return mapItems[x, y + 1];
+        }
+        bool isLeftBottom = PointinTriangle(leftMiddle, bottomMiddle, leftBottom, p);
+        if (isLeftBottom)
+        {
+            Debug.Log("isLeftBottom******************************" + x + 1 + "  " + y);
+            return mapItems[x + 1, y];
+        }
+        return tile;
+
+    }
+    public bool PointinTriangle(Vector3 A, Vector3 B, Vector3 C, Vector3 P)
+    {
+        Vector3 v0 = C - A;
+        Vector3 v1 = B - A;
+        Vector3 v2 = P - A;
+
+        //float dot00 = v0.Dot(v0);
+        float dot00 = Vector3.Dot(v0, v0);
+        //float dot01 = v0.Dot(v1);
+        float dot01 = Vector3.Dot(v0, v1);
+        //float dot02 = v0.Dot(v2);
+        float dot02 = Vector3.Dot(v0, v2);
+        //float dot11 = v1.Dot(v1);
+        float dot11 = Vector3.Dot(v1, v1);
+        //float dot12 = v1.Dot(v2);
+        float dot12 = Vector3.Dot(v1, v2);
+
+        float inverDeno = 1 / (dot00 * dot11 - dot01 * dot01);
+
+        float u = (dot11 * dot02 - dot01 * dot12) * inverDeno;
+        if (u < 0 || u > 1) // if u out of range, return directly
+        {
+            return false;
+        }
+
+        float v = (dot00 * dot12 - dot01 * dot02) * inverDeno;
+        if (v < 0 || v > 1) // if v out of range, return directly
+        {
+            return false;
+        }
+
+        return u + v <= 1;
+    }
+}
