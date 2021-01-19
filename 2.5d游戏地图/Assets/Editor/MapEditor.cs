@@ -5,7 +5,7 @@ using UnityEditor;
 
 public class MapEditor : EditorWindow
 {
-    
+
     [MenuItem("工具/地图编译器")]
     static void MapEditorDraw()
     {
@@ -14,10 +14,11 @@ public class MapEditor : EditorWindow
             MapEditor window = EditorWindow.GetWindow<MapEditor>("地图编译器");
         }
     }
-  
+
     int x_max;
     int y_max;
-
+    string[] mapType =new  string[]{"水","土","麦子"};
+    int mapTypeIndex = 0;
     private void OnGUI()
     {
         GUILayout.Label("行数");
@@ -36,6 +37,17 @@ public class MapEditor : EditorWindow
         {
             MapMgr.Get.BeginCreate(x_max, y_max);
           
+        }
+        EditorGUILayout.Space(10);
+        int index = EditorGUILayout.Popup(mapTypeIndex, mapType);
+        if (index!=mapTypeIndex)
+        {
+            mapTypeIndex = index;
+        }
+        if (GUILayout.Button("改变"))
+        {
+            MapMgr.Get.ChangeTerrain(mapType[mapTypeIndex]);
+
         }
     }
 }

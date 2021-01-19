@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum MapType
+{
+    水,土,麦子
+}
 public class MapMgr : MonoBehaviour
 {
     static MapMgr _get;
@@ -17,17 +21,28 @@ public class MapMgr : MonoBehaviour
         }
     }
     public MapItrm[,] mapItems;
+    public List<MapItrm> sele;
     GameObject obj;
-    private void Start()
-    {
-        obj = Resources.Load<GameObject>("land_water");
-    }
+
     float high = 1.086f;
     float side = 2.05f;
     int x_max;
     int y_max;
+    private void Start()
+    {
+        sele = new List<MapItrm>();
+        obj = Resources.Load<GameObject>("land_water");
+    }
+    
     public void BeginCreate(int _x_max, int _y_max)
     {
+        if (transform.childCount != 0)
+        {
+            foreach (Transform item in transform)
+            {
+                Destroy(item.gameObject);
+            }
+        }
         x_max = _x_max;
         y_max = _y_max;
 
@@ -39,48 +54,43 @@ public class MapMgr : MonoBehaviour
                 float x = (j - i) * side / 2;
                 float y = (j + i) * high / 2;
                 GameObject obj1 = Instantiate(obj);
-                obj1.transform.position = new Vector3(x,  y, 0);
+                obj1.transform.position = new Vector3(x, y, 0);
+                obj1.transform.SetParent(transform, false);
                 mapItems[i, j] = obj1.GetComponent<MapItrm>();
-                mapItems[i, j].x = i;
-                mapItems[i, j].y = j;
-
+                mapItems[i, j].SetPos(i, j);
             }
         }
     }
+    public void ChangeTerrain(string name)
+    {
+        for (int i = 0; i < sele.Count; i++)
+        {
+            Sprite sprite = Resources.Load<Sprite>(name);
+            sele[i].SetSprite(sprite);
+        }
+        sele.Clear();
+    }
     private void Update()
     {
-
         if (Input.GetMouseButtonDown(0))
-            
         {
-            MapItrm tile = getGameXY(Input.mousePosition);
-
-            tile.GetComponent<Renderer>().material.color = Color.red;
-           /* print("01");
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
-            if (Physics.Raycast(ray,out hit))
+            if (Physics.Raycast(ray, out hit))
             {
-                print("02");
-            }*/
+                MapItrm mapItrm = getGameXY(hit.point, hit.collider.gameObject.GetComponent<MapItrm>());
+                mapItrm.Selected();
+            }
         }
     }
-    public MapItrm getGameXY(Vector2 pos)
+    public MapItrm getGameXY(Vector2 pos, MapItrm tile)
     {
-        Vector3 p = Camera.main.ScreenToWorldPoint(new Vector3(pos.x, pos.y, 3));
-        // Debug.Log(p);
-        //  p = map.transform.InverseTransformPoint(p);
-        //  Debug.Log(p);
-        //p.x = p.x - Screen.width / 2;
-        p.y = p.y + x_max * 0.3f;
-        int x = (int)Mathf.Round(0.5f * (p.y / (high / 2) - p.x / (side / 2)));
-        int y = (int)Mathf.Round(0.5f * (p.y / (high / 2) + p.x / (side / 2)));
+        Vector3 p = new Vector3(pos.x, pos.y, 0);// Camera.main.ScreenToWorldPoint(new Vector3(pos.x, pos.y, 0));
 
-        Debug.Log(x + "  " + y);
+        int x = tile.x;
+        int y = tile.y;
 
-        //根据矩形算出来的图快
-        MapItrm tile = mapItems[x, y];
-        Vector3 tilePos = tile.transform.localPosition;
+        Vector3 tilePos = tile.transform.position;
         ///八个点
         Vector3 leftTop = tilePos + new Vector3(-side, -high);
         Vector3 topMiddle = tilePos + new Vector3(0, -high / 2);
@@ -94,25 +104,25 @@ public class MapMgr : MonoBehaviour
         bool isLeftTop = PointinTriangle(leftTop, topMiddle, leftMiddle, p);
         if (isLeftTop)
         {
-            Debug.Log("isLeftTop********************** " + x + "  " + (y - 1));
+            //Debug.Log("isLeftTop********************** " + x + "  " + (y - 1));
             return mapItems[x, y - 1];
         }
         bool isRightTop = PointinTriangle(topMiddle, rightTop, rightMiddle, p);
         if (isRightTop)
         {
-            Debug.Log("isRightTop******************************** " + (x - 1) + "  " + y);
+            //Debug.Log("isRightTop******************************** " + (x - 1) + "  " + y);
             return mapItems[x - 1, y];
         }
         bool isRightBottom = PointinTriangle(rightMiddle, rightBottom, bottomMiddle, p);
         if (isRightBottom)
         {
-            Debug.Log("isRightBottom******************************" + x + "  " + y + 1);
+            // Debug.Log("isRightBottom******************************" + x + "  " + y + 1);
             return mapItems[x, y + 1];
         }
         bool isLeftBottom = PointinTriangle(leftMiddle, bottomMiddle, leftBottom, p);
         if (isLeftBottom)
         {
-            Debug.Log("isLeftBottom******************************" + x + 1 + "  " + y);
+            //Debug.Log("isLeftBottom******************************" + x + 1 + "  " + y);
             return mapItems[x + 1, y];
         }
         return tile;

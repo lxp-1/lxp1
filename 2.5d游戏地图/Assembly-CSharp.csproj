@@ -67,7 +67,7 @@
     <Compile Include="Assets\scripts\MapItrm.cs" />
     <Compile Include="Assets\scripts\MapMgr.cs" />
     <Compile Include="Assets\scripts\MyCamera.cs" />
-    <None Include="Assets\New Folder001\001.shader" />
+    <None Include="Assets\001.shader" />
     <Reference Include="UnityEngine">
       <HintPath>E:/Study_Software/UnityHub/unity/2019.4.15f1c1/Editor/Data/Managed/UnityEngine/UnityEngine.dll</HintPath>
     </Reference>
